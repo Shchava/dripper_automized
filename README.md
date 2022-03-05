@@ -53,15 +53,11 @@ git clone https://github.com/alexmon1989/russia_ddos.git
 cd russia_ddos
 
 # run
-python -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+python DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 # OR
-python3 -u DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
+python3 DRipper.py -s 127.0.0.1 -p 80 -t 100 -r 1 -m udp
 ```
 
 # License
 
 This project is distributed under the MIT License, see [LICENSE](./LICENSE) for more information.
-
-<!-- External links -->
-[actions build badge]: https://github.com/alexmon1989/russia_ddos/actions/workflows/build.yml/badge.svg
-[actions build link]:  https://github.com/alexmon1989/russia_ddos/actions/workflows/build.yml
