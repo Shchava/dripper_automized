@@ -18,10 +18,10 @@ from os import urandom as randbytes
 # Constants
 USAGE = 'Usage: python %prog [options] arg'
 EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
-GETTING_SERVER_IP_ERROR_MSG = "\033[91mCan't get server IP. Packet sending failed. Check your VPN.\033[0m"
+GETTING_SERVER_IP_ERROR_MSG = "Can't get server IP. Packet sending failed. Check your VPN."
 SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
-NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = f"\033[91mThere are no successful connections more than 2 min. " \
-                                      f"Check your VPN or change host/port.\033[0m"
+NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = f"There are no successful connections more than 2 min. " \
+                                      f"Check your VPN or change host/port."
 
 lock = threading.Lock()
 
@@ -134,7 +134,7 @@ def down_it_udp(_ctx: Context):
             if GETTING_SERVER_IP_ERROR_MSG in _ctx.errors:
                 _ctx.errors.remove(GETTING_SERVER_IP_ERROR_MSG)
             _ctx.packets_sent += 1
-            # print('\033[92m Packet was sent \033[0;0m')
+            # print(' Packet was sent ')
         sock.close()
 
         if _ctx.port:
@@ -161,7 +161,7 @@ def down_it_http(_ctx: Context):
             _ctx.connections_failed += 1
         else:
             _ctx.connections_success += 1
-            # print('\033[92m HTTP-Request was done \033[0;0m')
+            # print(' HTTP-Request was done ')
 
         _ctx.packets_sent += 1
         show_statistics(_ctx)
@@ -197,7 +197,7 @@ def down_it_tcp(_ctx: Context):
 
 
 def logo():
-    print(''' \033[0;95m
+    print('''
 
 ██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗██████╗
 ██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝██╔══██╗
@@ -210,7 +210,7 @@ It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 
 Please, make sure you are ANONYMOUS!
-    \033[0m ''')
+     ''')
 
 
 def usage(parser):
@@ -251,7 +251,7 @@ def parser_add_options(parser):
 
 def check_host(host):
     """Check Server IP."""
-    error_msg = "\033[91mCheck server IP and port! Wrong format of server name or no connection.\033[0m"
+    error_msg = "Check server IP and port! Wrong format of server name or no connection."
     if not host:
         print(error_msg)
         exit(1)
@@ -289,14 +289,14 @@ def show_info(_ctx: Context):
     my_ip_masked = get_first_ip_part(_ctx.start_ip)
     is_random_packet_len = _ctx.attack_method in ('tcp', 'udp') and _ctx.random_packet_len
 
-    your_ip = f'\033[94m{my_ip_masked}\033[0m'
-    check_vpn = f'\033[91mIP was changed, check VPN (current IP: {my_ip_masked})\033[0m' if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip else ''
-    target_host = f'\033[94m{_ctx.host}:{_ctx.port}\033[0m'
-    load_method = f'\033[94m{str(_ctx.attack_method).upper()}\033[0m'
-    thread_pool = f'\033[94m{_ctx.threads}\033[0m'
-    available_cpu = f'\033[94m{_ctx.cpu_count}\033[0m'
-    rnd_packet_len = f'\033[94mYES\033[0m' if is_random_packet_len else f'\033[94mNO\033[0m'
-    max_rnd_packet_len = f'\033[94m{_ctx.max_random_packet_len}\033[0m' if is_random_packet_len else f'\033[94mNOT REQUIRED\033[0m'
+    your_ip = f'{my_ip_masked}'
+    check_vpn = f'IP was changed, check VPN (current IP: {my_ip_masked})' if _ctx.current_ip and _ctx.current_ip != _ctx.start_ip else ''
+    target_host = f'{_ctx.host}:{_ctx.port}'
+    load_method = f'{str(_ctx.attack_method).upper()}'
+    thread_pool = f'{_ctx.threads}'
+    available_cpu = f'{_ctx.cpu_count}'
+    rnd_packet_len = f'YES' if is_random_packet_len else f'NO'
+    max_rnd_packet_len = f'{_ctx.max_random_packet_len}' if is_random_packet_len else f'NOT REQUIRED'
 
     print('------------------------------------------------------')
     print(f'Start time:                 {_ctx.start_time.strftime("%Y-%m-%d %H:%M:%S")}')
@@ -332,8 +332,8 @@ def show_statistics(_ctx: Context):
         print("\033c")
         show_info(_ctx)
 
-        connections_success = f'\033[92m{_ctx.connections_success}\033[0;0m'
-        connections_failed = f'\033[91m{_ctx.connections_failed}\033[0;0m'
+        connections_success = f'{_ctx.connections_success}'
+        connections_failed = f'{_ctx.connections_failed}'
 
         curr_time = datetime.now() - _ctx.start_time
 
@@ -344,9 +344,9 @@ def show_statistics(_ctx: Context):
         elif _ctx.attack_method == 'tcp':
             size_sent = convert_size(_ctx.packets_sent)
             if _ctx.packets_sent == 0:
-                size_sent = f"\033[91m{size_sent}\033[0;0m"
+                size_sent = f"{size_sent}"
             else:
-                size_sent = f"\033[94m{size_sent}\033[0m"
+                size_sent = f"{size_sent}"
 
             print(f'Total Packets Sent Size:    {size_sent}')
         else:  # udp
@@ -358,7 +358,7 @@ def show_statistics(_ctx: Context):
         if _ctx.errors:
             print('\n\n')
         for error in _ctx.errors:
-            print(f"\033[91m{error}\033[0;0m\n")
+            print(f"{error}\n")
             print('\007')
 
         sys.stdout.flush()
@@ -456,15 +456,15 @@ def check_successful_tcp_attack(_ctx: Context):
 def validate_input(args):
     """Validates input params."""
     if int(args.port) < 0:
-        print("\033[91mWrong port number.\033[0m")
+        print("Wrong port number.")
         return False
 
     if int(args.threads) < 1:
-        print("\033[91mWrong threads number.\033[0m\n")
+        print("Wrong threads number.\n")
         return False
 
     if args.attack_method not in ('udp', 'tcp', 'http'):
-        print("\033[91mWrong attack type. Possible options: udp, tcp, http.\033[0m\n")
+        print("Wrong attack type. Possible options: udp, tcp, http.\n")
         return False
 
     return True
@@ -483,13 +483,13 @@ def main():
     if current_ip:
         _ctx.start_ip = current_ip
     else:
-        _ctx.start_ip = "\033[91mCan't get your IP. Check internet connection.\033[0m"
+        _ctx.start_ip = "Can't get your IP. Check internet connection."
 
     check_host(_ctx.host)
     connect_host(_ctx)
 
-    print("\033[92m", _ctx.host, " port: ", _ctx.port, " threads: ", _ctx.threads, "\033[0m")
-    print("\033[94mPlease wait...\033[0m")
+    print("", _ctx.host, " port: ", _ctx.port, " threads: ", _ctx.threads, "")
+    print("Please wait...")
 
     time.sleep(1)
     show_info(_ctx)
