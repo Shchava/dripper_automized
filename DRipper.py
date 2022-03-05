@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from optparse import OptionParser
 from os import urandom as randbytes
+from typing import List
 
 
 # Constants
@@ -53,7 +54,7 @@ class Context:
     packets_sent_prev: int = 0
     connections_failed: int = 0
     connections_check_time: int = 0
-    errors: list[str] = field(default_factory=list)
+    errors: List[str] = field(default_factory=list)
 
     cpu_count: int = 1
     show_statistics: bool = False
@@ -90,7 +91,7 @@ def readfile(filename: str):
     return content
 
 
-def set_headers_dict(base_headers: list[str]):
+def set_headers_dict(base_headers: List[str]):
     """Set headers for the request"""
     headers_dict = {}
     for line in base_headers:
