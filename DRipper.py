@@ -210,7 +210,7 @@ def logo():
 It is the end user's responsibility to obey all applicable laws.
 It is just like a server testing script and Your IP is visible.
 
-Please, make sure you are ANONYMOUS!
+Please, make sure you are ANONYMOUS! v1.3.6
      ''')
 
 
