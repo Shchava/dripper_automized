@@ -1,9 +1,5 @@
 # DRipper
 
-[![Build status][actions build badge]][actions build link]
-![Docker Pulls](https://img.shields.io/docker/pulls/alexmon1989/dripper)
-![Docker Image Version (latest semver)](https://img.shields.io/docker/v/alexmon1989/dripper?label=DockerHub)
-
 DESCRIPTION
 -----------
 
@@ -49,14 +45,6 @@ Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100
 ```
 
 ## How to Run
-
-#### Using Docker
-
-```bash
-docker run -ti --rm alexmon1989/dripper:latest -s 127.0.0.1 -p 80 -t 100
-```
-
-#### Directly with Python.
 
 Ensure you have Python 3 installed. Then clone this repo and run DRipper.py with params you need
 
