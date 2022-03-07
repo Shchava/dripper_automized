@@ -10,7 +10,6 @@ import signal
 import threading
 import subprocess
 import urllib.request
-import requests
 from typing import List
 from base64 import b64decode
 from datetime import datetime
@@ -568,7 +567,7 @@ def go_home(_ctx: Context):
         update_url(_ctx)
 
 
-def mainAutomated():
+def main_automated():
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
     args = parse_args(parser)
     config_server = args[0].config
@@ -577,7 +576,8 @@ def mainAutomated():
 
     while True:
         time_with_config = 0
-        targets = requests.get(config_server).json()
+        config_response = get_config(config_server)
+        targets = json.loads(config_response)
         target_id = 0
 
         print("received targets: ")
@@ -591,7 +591,7 @@ def mainAutomated():
             prev_success = _ctx.connections_success
             prev_failed = _ctx.connections_failed
 
-            time.sleep(10)
+            time.sleep(30)
 
             time_with_config += 30
             period_success = _ctx.connections_success - prev_success
@@ -606,6 +606,16 @@ def mainAutomated():
                     init_attack(target, args, parser)
                 else:
                     break
+
+
+def get_config(config_server):
+    while True:
+        try:
+            print("getting new targets from: " + config_server)
+            return urllib.request.urlopen(config_server).read()
+        except:
+            print("could not connect to config server")
+            time.sleep(10)
 
 
 def init_attack(target, args, parser):
@@ -624,9 +634,6 @@ def start_attack(parser, args):
     update_host_ip(_ctx)
     update_current_ip(_ctx)
     go_home(_ctx)
-
-    if not validate_context(_ctx):
-        sys.exit()
 
     connect_host(_ctx)
 
@@ -650,7 +657,7 @@ _ctx = Context()
 
 if __name__ == '__main__':
     try:
-        sys.exit(mainAutomated())
+        sys.exit(main_automated())
     except KeyboardInterrupt:  # The user hit Control-C
         sys.stderr.write('\n\nReceived keyboard interrupt, terminating.\n\n')
         sys.stderr.flush()
