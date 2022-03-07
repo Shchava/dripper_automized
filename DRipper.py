@@ -602,8 +602,8 @@ def main_automated():
         init_attack(target, args, parser)
 
         while time_with_config < 1800:
-            prev_success = _ctx.connections_success
-            prev_failed = _ctx.connections_failed
+            _ctx.connections_success_period = _ctx.connections_success
+            _ctx.connections_failed_period = _ctx.connections_failed
 
             time.sleep(30)
 
