@@ -573,7 +573,7 @@ def mainAutomated():
     args = parse_args(parser)
     config_server = args[0].config
     if not config_server:
-        config_server = 'http://192.168.137.1:8080/configs'
+        config_server = 'http://143.244.184.64:8080/configs'
 
     while True:
         time_with_config = 0
