@@ -61,6 +61,10 @@ class Context:
     connections_success_prev: int = 0
     packets_sent_prev: int = 0
     connections_failed: int = 0
+
+    connections_success_period = 0
+    connections_failed_period = 0
+
     connections_check_time: int = 0
     errors: List[str] = field(default_factory=list)
 
@@ -406,6 +410,10 @@ def show_statistics(_ctx: Context):
         connections_success = (_ctx.connections_success)
         connections_failed = (_ctx.connections_failed)
 
+        per_conn_success = _ctx.connections_success - _ctx.connections_success_period
+        per_conn_failed = _ctx.connections_failed - _ctx.connections_failed_period
+
+
         curr_time = datetime.now() - _ctx.start_time
 
         print(f'Duration:                   {str(curr_time).split(".", 2)[0]}')
@@ -424,6 +432,8 @@ def show_statistics(_ctx: Context):
         print(f'Total packets Sent:         {_ctx.packets_sent}')
         print(f'Total Connection Success:   {connections_success}')
         print(f'Total Connection Failed:    {connections_failed}')
+        print(f'30s Connection Success:     {per_conn_success}')
+        print(f'30s Connection Failed:      {per_conn_failed}')
         print('------------------------------------------------------')
 
         if _ctx.errors:
@@ -595,12 +605,12 @@ def main_automated():
             prev_success = _ctx.connections_success
             prev_failed = _ctx.connections_failed
 
-            time.sleep(10)
+            time.sleep(30)
 
-            time_with_config += 10
-            period_success = _ctx.connections_success - prev_success
-            period_failed = _ctx.connections_failed - prev_failed
-            if period_success < period_failed:
+            time_with_config += 30
+            _ctx.connections_success_period = _ctx.connections_success - _ctx.connections_success_period
+            _ctx.connections_failed_period = _ctx.connections_failed - _ctx.connections_failed_period
+            if _ctx.connections_success_period < _ctx.connections_failed_period:
                 print("changing target")
 
                 kill_threads()
@@ -657,6 +667,7 @@ def start_attack(parser, args):
 
 def kill_threads():
     _ctx.runVersion += 1
+    time.sleep(5)
 
 
 # Context should be in global scope
