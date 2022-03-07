@@ -619,9 +619,10 @@ def get_config(config_server):
 
 
 def init_attack(target, args, parser):
-    args[0].attack_method = target['protocol']
     args[0].host = target['address']
     args[0].port = target['port']
+    if not args[0].attack_method:
+        args[0].attack_method = target['protocol']
 
     start_attack(parser, args)
 
