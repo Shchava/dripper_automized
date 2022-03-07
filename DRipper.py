@@ -292,6 +292,9 @@ def parser_add_options(parser):
     parser.add_option('-s', '--server',
                       dest='host',
                       help='Attack to server IP')
+    parser.add_option('-c', '--config',
+                      dest='config',
+                      help='server for getting target configs')
 
 
 def update_host_ip(_ctx: Context):
@@ -568,9 +571,13 @@ def go_home(_ctx: Context):
 def mainAutomated():
     parser = OptionParser(usage=USAGE, epilog=EPILOG)
     args = parse_args(parser)
+    config_server = args[0].config
+    if not config_server:
+        config_server = 'http://192.168.137.1:8080/configs'
+
     while True:
         time_with_config = 0
-        targets = requests.get('http://192.168.137.1:8080/configs').json()
+        targets = requests.get(config_server).json()
         target_id = 0
 
         print("received targets: ")
